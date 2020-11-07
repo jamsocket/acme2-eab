@@ -120,7 +120,7 @@ pub mod tests {
     use crate::Directory;
     use crate::Jws;
 
-    const LETSENCRYPT_STAGING_DIRECTORY_URL: &'static str =
+    const LETSENCRYPT_STAGING_DIRECTORY_URL: &str =
         "https://acme-staging-v02.api.letsencrypt.org/directory";
 
     pub async fn test_acc() -> Result<Account> {

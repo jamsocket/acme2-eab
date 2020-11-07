@@ -60,10 +60,7 @@ impl<'a> CertificateSigner<'a> {
         csr_path: P,
     ) -> Result<CertificateSigner<'a>> {
         self.pkey = Some(read_pkey(pkey_path).await?);
-        let content = {
-            let content = fs::read(csr_path).await?;
-            content
-        };
+        let content = fs::read(csr_path).await?;
         self.csr = Some(X509Req::from_pem(&content)?);
         Ok(self)
     }

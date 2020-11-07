@@ -36,12 +36,12 @@ mod helper;
 mod jwt;
 mod register;
 
-pub const LETSENCRYPT_DIRECTORY_URL: &'static str = "https://acme-v02.api.letsencrypt.org\
+pub const LETSENCRYPT_DIRECTORY_URL: &str = "https://acme-v02.api.letsencrypt.org\
                                                      /directory";
-pub const LETSENCRYPT_AGREEMENT_URL: &'static str = "https://letsencrypt.org/documents/LE-SA-v1.2-\
+pub const LETSENCRYPT_AGREEMENT_URL: &str = "https://letsencrypt.org/documents/LE-SA-v1.2-\
                                                      November-15-2017.pdf";
 /// Default Let's Encrypt intermediate certificate URL to chain when needed.
-pub const LETSENCRYPT_INTERMEDIATE_CERT_URL: &'static str = "https://letsencrypt.org/certs/\
+pub const LETSENCRYPT_INTERMEDIATE_CERT_URL: &str = "https://letsencrypt.org/certs/\
                                                              lets-encrypt-x3-cross-signed.pem";
 /// Default bit lenght for RSA keys and `X509_REQ`
 const BIT_LENGTH: u32 = 2048;
@@ -160,9 +160,9 @@ impl Directory {
         let res = client.get(&self.resources.new_nonce).send().await?;
         res.headers()
             .get("Replay-Nonce")
-            .ok_or("Replay-Nonce header not found".into())
+            .ok_or_else(|| "Replay-Nonce header not found".into())
             // TODO(lucacasonato): handle this error
-            .and_then(|nonce| Ok(nonce.to_str().unwrap().to_string()))
+            .map(|nonce| nonce.to_str().unwrap().to_string())
     }
 
     /// Makes a new post request to directory, signs payload with pkey.
@@ -262,8 +262,8 @@ pub struct NewOrderResponse {
 
 impl Account {
     /// Creates a new identifier authorization object for domain
-    pub async fn create_order<'a, T: AsRef<str> + Debug + Clone + Display>(
-        &'a mut self,
+    pub async fn create_order<T: AsRef<str> + Debug + Clone + Display>(
+        &mut self,
         domains: &[T],
     ) -> Result<CreateOrderResponse> {
         info!(
@@ -310,7 +310,7 @@ impl Account {
 
         Ok(CreateOrderResponse {
             finalize_url: new_order.finalize,
-            challenges: challenges,
+            challenges,
             domains: domains.iter().map(|s| s.to_string()).collect(),
         })
     }
@@ -322,7 +322,7 @@ impl Account {
     ///
     /// You can additionally use your own private key and CSR.
     /// See [`CertificateSigner`](struct.CertificateSigner.html) for details.
-    pub fn certificate_signer<'a>(&'a self) -> CertificateSigner<'a> {
+    pub fn certificate_signer(&self) -> CertificateSigner {
         CertificateSigner {
             account: self,
             pkey: None,
@@ -384,7 +384,7 @@ mod tests {
     async fn test_order() {
         let _ = env_logger::init();
         let mut account = crate::jwt::tests::test_acc().await.unwrap();
-        let order = account.create_order(&vec!["test.lcas.dev"]).await.unwrap();
+        let order = account.create_order(&["test.lcas.dev"]).await.unwrap();
 
         for chal in order.get_dns_challenges() {
             println!(
