@@ -25,7 +25,6 @@ use openssl::pkey::PKey;
 use openssl::x509::X509;
 
 use error::Result;
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{to_string, Value};
 
@@ -53,9 +52,9 @@ const BIT_LENGTH: u32 = 2048;
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 struct DirectoryMetadata {
-    caa_identities: Vec<String>,
-    terms_of_service: String,
-    website: String,
+    terms_of_service: Option<String>,
+    website: Option<String>,
+    caa_identities: Option<Vec<String>>,
     #[serde(flatten)]
     other: HashMap<String, Value>,
 }
@@ -99,7 +98,7 @@ impl Directory {
     /// # async fn main () { try_main().await.unwrap(); }
     /// ```
     pub async fn from_url(url: &str) -> Result<Directory> {
-        let client = Client::new();
+        let client = client()?;
 
         let res = client.get(url).send().await?;
 
@@ -156,7 +155,7 @@ impl Directory {
     /// Gets nonce header from directory.
     ///
     async fn get_nonce(&self) -> Result<String> {
-        let client = Client::new();
+        let client = client()?;
         let res = client.get(&self.resources.new_nonce).send().await?;
         res.headers()
             .get("Replay-Nonce")
@@ -168,7 +167,7 @@ impl Directory {
     /// Makes a new post request to directory, signs payload with pkey.
     ///
     /// Returns the result struct that is deserialized from the result
-    async fn request<'a, T: Serialize, E>(
+    async fn request<T: Serialize, E>(
         &self,
         account: &mut Account,
         url: &str,
@@ -179,7 +178,7 @@ impl Directory {
     {
         let jws = Jws::new(url, account, payload).await?;
 
-        let client = Client::new();
+        let client = client()?;
 
         let res = client
             .post(url)
@@ -219,16 +218,6 @@ struct Identifier {
     value: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
-struct FinalizeResponse {
-    status: String,
-    finalize: String,
-    certificate: String,
-    expires: String,
-    authorizations: Vec<String>,
-    identifiers: Vec<Identifier>,
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CreateOrderResponse {
     finalize_url: String,
@@ -252,12 +241,13 @@ pub struct NewOrderRequest {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct NewOrderResponse {
+pub struct OrderResponse {
     status: String,
     expires: String,
     identifiers: Vec<Identifier>,
     authorizations: Vec<String>,
     finalize: String,
+    certificate: Option<String>,
 }
 
 impl Account {
@@ -286,7 +276,7 @@ impl Account {
         };
         let directory = self.directory().clone();
 
-        let new_order: NewOrderResponse = directory
+        let new_order: OrderResponse = directory
             .request(self, &directory.resources.new_order, req)
             .await?;
 
@@ -401,7 +391,7 @@ mod tests {
         let signer = account.certificate_signer();
 
         signer
-            .sign_certificate(&order)
+            .sign_certificate(&order, Duration::from_secs(5))
             .await
             .unwrap()
             .save_signed_certificate("tests/cert.pem")
