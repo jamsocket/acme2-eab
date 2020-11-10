@@ -11,6 +11,7 @@ pub use directory::*;
 pub use helpers::gen_rsa_private_key;
 pub use helpers::AcmeError;
 pub use helpers::Identifier;
+pub use openssl;
 pub use order::*;
 
 #[cfg(test)]
