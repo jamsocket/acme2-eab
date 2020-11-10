@@ -37,5 +37,7 @@ jobs:
           cargo clippy --all-targets --locked --release -- -D clippy::all
       - name: Build
         run: cargo build --verbose
+      - name: Start pebble
+        run: docker-compose up -d
       - name: Run tests
         run: cargo test --verbose
