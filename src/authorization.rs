@@ -8,7 +8,7 @@ use openssl::hash::hash;
 use openssl::hash::MessageDigest;
 use serde::Deserialize;
 use serde_json::json;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::time::Duration;
 
 #[derive(Deserialize, Debug, Eq, PartialEq)]
@@ -30,7 +30,7 @@ pub enum AuthorizationStatus {
 /// for an account to represent an identifier.
 pub struct Authorization {
   #[serde(skip)]
-  pub(crate) account: Option<Rc<Account>>,
+  pub(crate) account: Option<Arc<Account>>,
   #[serde(skip)]
   pub(crate) url: String,
 
@@ -65,7 +65,7 @@ pub enum ChallengeStatus {
 #[serde(rename_all = "camelCase")]
 pub struct Challenge {
   #[serde(skip)]
-  pub(crate) account: Option<Rc<Account>>,
+  pub(crate) account: Option<Arc<Account>>,
 
   #[serde(rename = "type")]
   /// The type of challenge encoded in the object.

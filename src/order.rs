@@ -11,7 +11,7 @@ use openssl::x509::X509Req;
 use openssl::x509::X509;
 use serde::Deserialize;
 use serde_json::json;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::time::Duration;
 
 #[derive(Deserialize, Debug, Eq, PartialEq)]
@@ -32,7 +32,7 @@ pub enum OrderStatus {
 /// and is used to track the progress of that order through to issuance.
 pub struct Order {
   #[serde(skip)]
-  pub(crate) account: Option<Rc<Account>>,
+  pub(crate) account: Option<Arc<Account>>,
   #[serde(skip)]
   pub(crate) url: String,
 
@@ -69,14 +69,14 @@ pub struct Order {
 
 #[derive(Debug)]
 pub struct OrderBuilder {
-  account: Rc<Account>,
+  account: Arc<Account>,
 
   identifiers: Vec<Identifier>,
   // TODO(lucacasonato): externalAccountBinding
 }
 
 impl OrderBuilder {
-  pub fn new(account: Rc<Account>) -> Self {
+  pub fn new(account: Arc<Account>) -> Self {
     OrderBuilder {
       account,
       identifiers: vec![],
