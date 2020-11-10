@@ -5,7 +5,7 @@ use openssl::pkey::PKey;
 use openssl::pkey::Private;
 use serde::Deserialize;
 use serde_json::json;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Deserialize, Eq, PartialEq, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -25,7 +25,7 @@ pub enum AccountStatus {
 /// account.
 pub struct Account {
   #[serde(skip)]
-  pub(crate) directory: Option<Rc<Directory>>,
+  pub(crate) directory: Option<Arc<Directory>>,
 
   #[serde(skip)]
   pub(crate) private_key: Option<PKey<Private>>,
@@ -51,7 +51,7 @@ pub struct Account {
 
 #[derive(Debug)]
 pub struct AccountBuilder {
-  directory: Rc<Directory>,
+  directory: Arc<Directory>,
 
   private_key: Option<PKey<Private>>,
 
@@ -62,7 +62,7 @@ pub struct AccountBuilder {
 }
 
 impl AccountBuilder {
-  pub fn new(directory: Rc<Directory>) -> Self {
+  pub fn new(directory: Arc<Directory>) -> Self {
     AccountBuilder {
       directory,
       private_key: None,
@@ -98,7 +98,7 @@ impl AccountBuilder {
     self
   }
 
-  pub async fn build(&mut self) -> Result<Rc<Account>, Error> {
+  pub async fn build(&mut self) -> Result<Arc<Account>, Error> {
     let private_key = if let Some(private_key) = self.private_key.clone() {
       private_key
     } else {
@@ -134,7 +134,7 @@ impl AccountBuilder {
     acc.directory = Some(self.directory.clone());
     acc.private_key = Some(private_key);
     acc.private_key_id = private_key_id;
-    Ok(Rc::new(acc))
+    Ok(Arc::new(acc))
   }
 }
 

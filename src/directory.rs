@@ -6,8 +6,8 @@ use openssl::pkey::Private;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Serialize;
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 pub struct DirectoryBuilder {
   url: String,
@@ -27,7 +27,7 @@ impl DirectoryBuilder {
     self
   }
 
-  pub async fn build(&mut self) -> Result<Rc<Directory>, Error> {
+  pub async fn build(&mut self) -> Result<Arc<Directory>, Error> {
     let http_client = self
       .http_client
       .clone()
@@ -40,9 +40,9 @@ impl DirectoryBuilder {
     let mut dir = res?;
 
     dir.http_client = http_client;
-    dir.nonce = RefCell::new(None);
+    dir.nonce = Mutex::new(None);
 
-    Ok(Rc::new(dir))
+    Ok(Arc::new(dir))
   }
 }
 
@@ -52,7 +52,7 @@ pub struct Directory {
   #[serde(skip)]
   pub(crate) http_client: reqwest::Client,
   #[serde(skip)]
-  pub(crate) nonce: RefCell<Option<String>>,
+  pub(crate) nonce: Mutex<Option<String>>,
   #[serde(rename = "newNonce")]
   pub(crate) new_nonce_url: String,
   #[serde(rename = "newAccount")]
@@ -93,9 +93,11 @@ fn extract_nonce_from_response(
 
 impl Directory {
   pub(crate) async fn get_nonce(&self) -> Result<String, Error> {
-    let maybe_nonce = self.nonce.try_borrow()?.clone();
+    let maybe_nonce = {
+      let mut guard = self.nonce.lock().unwrap();
+      std::mem::replace(&mut *guard, None)
+    };
     if let Some(nonce) = maybe_nonce {
-      self.nonce.replace(None);
       return Ok(nonce);
     }
 
@@ -125,7 +127,8 @@ impl Directory {
       .await?;
 
     if let Some(nonce) = extract_nonce_from_response(&resp)? {
-      self.nonce.replace(Some(nonce));
+      let mut guard = self.nonce.lock().unwrap();
+      *guard = Some(nonce);
     }
 
     Ok(resp)

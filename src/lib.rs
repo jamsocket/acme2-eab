@@ -18,7 +18,7 @@ pub use order::*;
 mod tests {
   use crate::*;
   use serde_json::json;
-  use std::rc::Rc;
+  use std::sync::Arc;
   use std::time::Duration;
 
   async fn pebble_http_client() -> reqwest::Client {
@@ -30,7 +30,7 @@ mod tests {
       .unwrap()
   }
 
-  async fn pebble_directory() -> Rc<Directory> {
+  async fn pebble_directory() -> Arc<Directory> {
     let http_client = pebble_http_client().await;
 
     DirectoryBuilder::new("https://localhost:14000/dir".to_string())
@@ -40,7 +40,7 @@ mod tests {
       .unwrap()
   }
 
-  async fn pebble_account() -> Rc<Account> {
+  async fn pebble_account() -> Arc<Account> {
     let dir = pebble_directory().await;
     let mut builder = AccountBuilder::new(dir);
 
