@@ -98,7 +98,7 @@ impl Directory {
       std::mem::replace(&mut *guard, None)
     };
     if let Some(nonce) = maybe_nonce {
-      return Ok(nonce.clone());
+      return Ok(nonce);
     }
 
     let resp = self.http_client.get(&self.new_nonce_url).send().await?;
