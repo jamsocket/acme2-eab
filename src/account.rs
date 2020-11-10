@@ -137,3 +137,9 @@ impl AccountBuilder {
     Ok(Rc::new(acc))
   }
 }
+
+impl Account {
+  pub fn private_key(&self) -> PKey<Private> {
+    self.private_key.clone().unwrap()
+  }
+}
