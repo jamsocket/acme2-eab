@@ -1,9 +1,9 @@
 use crate::account::Account;
+use crate::error::*;
 use crate::helpers::Identifier;
 use crate::helpers::*;
 use crate::jws::Jwk;
 use crate::order::Order;
-use anyhow::Error;
 use openssl::hash::hash;
 use openssl::hash::MessageDigest;
 use serde::Deserialize;
@@ -92,7 +92,7 @@ pub struct Challenge {
 
   /// Error that occurred while the server was validating the
   /// challenge, if any.
-  pub error: Option<AcmeError>,
+  pub error: Option<ServerError>,
 
   /// A random value that uniquely identifies the challenge.
   pub token: Option<String>,
