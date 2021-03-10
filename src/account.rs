@@ -1,6 +1,6 @@
 use crate::directory::Directory;
+use crate::error::*;
 use crate::helpers::*;
-use anyhow::Error;
 use openssl::pkey::PKey;
 use openssl::pkey::Private;
 use serde::Deserialize;
@@ -150,13 +150,15 @@ impl AccountBuilder {
     let res: Result<Account, Error> = res.into();
     let mut acc = res?;
 
-    let private_key_id = headers
-      .get(reqwest::header::LOCATION)
-      .ok_or_else(|| {
-        anyhow::anyhow!("mandatory location header in newAccount not present")
-      })?
-      .to_str()?
-      .to_string();
+    let private_key_id = map_transport_err(
+      headers
+        .get(reqwest::header::LOCATION)
+        .ok_or_else(|| {
+          transport_err("mandatory location header in newAccount not present")
+        })?
+        .to_str(),
+    )?
+    .to_string();
     Span::current().record("private_key_id", &field::display(&private_key_id));
 
     acc.directory = Some(self.directory.clone());

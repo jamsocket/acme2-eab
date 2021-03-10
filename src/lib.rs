@@ -25,7 +25,7 @@
 //! use acme2::OrderBuilder;
 //! use acme2::OrderStatus;
 //! use acme2::CSR;
-//! use anyhow::Error;
+//! use acme2::Error;
 //! use std::time::Duration;
 //!
 //! const LETS_ENCRYPT_URL: &'static str =
@@ -111,6 +111,7 @@
 mod account;
 mod authorization;
 mod directory;
+mod error;
 mod helpers;
 mod jws;
 mod order;
@@ -118,8 +119,10 @@ mod order;
 pub use account::*;
 pub use authorization::*;
 pub use directory::*;
+pub use error::Error;
+pub use error::ServerError;
+pub use error::TransportError;
 pub use helpers::gen_rsa_private_key;
-pub use helpers::AcmeError;
 pub use helpers::Identifier;
 pub use openssl;
 pub use order::*;

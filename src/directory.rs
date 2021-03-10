@@ -1,6 +1,5 @@
-use crate::helpers::*;
+use crate::error::*;
 use crate::jws::jws;
-use anyhow::Error;
 use openssl::pkey::PKey;
 use openssl::pkey::Private;
 use serde::de::DeserializeOwned;
@@ -60,7 +59,7 @@ impl DirectoryBuilder {
     let resp = http_client.get(&self.url).send().await?;
 
     let res: Result<Directory, Error> =
-      resp.json::<AcmeResult<Directory>>().await?.into();
+      resp.json::<ServerResult<Directory>>().await?.into();
     let mut dir = res?;
     Span::current().record("dir", &field::debug(&dir));
 
@@ -115,7 +114,9 @@ fn extract_nonce_from_response(
   let headers = resp.headers();
   let maybe_nonce_res = headers
     .get("replay-nonce")
-    .map::<Result<String, Error>, _>(|hv| Ok(hv.to_str()?.to_string()));
+    .map::<Result<String, Error>, _>(|hv| {
+      Ok(map_transport_err(hv.to_str())?.to_string())
+    });
   match maybe_nonce_res {
     Some(Ok(n)) => Ok(Some(n)),
     Some(Err(err)) => Err(err),
@@ -145,7 +146,7 @@ impl Directory {
     let maybe_nonce = extract_nonce_from_response(&resp)?;
     match maybe_nonce {
       Some(nonce) => Ok(nonce),
-      None => Err(anyhow::anyhow!("newNonce request must return a nonce")),
+      None => Err(transport_err("newNonce request must return a nonce")),
     }
   }
 
@@ -188,7 +189,7 @@ impl Directory {
     payload: T,
     pkey: PKey<Private>,
     pkey_id: Option<String>,
-  ) -> Result<(AcmeResult<R>, reqwest::header::HeaderMap), Error>
+  ) -> Result<(ServerResult<R>, reqwest::header::HeaderMap), Error>
   where
     T: Serialize,
     R: DeserializeOwned,
@@ -210,19 +211,19 @@ impl Directory {
 
       let headers = resp.headers().clone();
 
-      let res: AcmeResult<R> = resp.json().await?;
+      let res: ServerResult<R> = resp.json().await?;
 
       let res = match res {
-        AcmeResult::Err(err) => {
+        ServerResult::Err(err) => {
           if let Some(typ) = err.r#type.clone() {
             if &typ == "urn:ietf:params:acme:error:badNonce" && attempt <= 3 {
               debug!({ attempt }, "bad nonce, retrying");
               continue;
             }
           }
-          AcmeResult::Err(err)
+          ServerResult::Err(err)
         }
-        AcmeResult::Ok(ok) => AcmeResult::Ok(ok),
+        ServerResult::Ok(ok) => ServerResult::Ok(ok),
       };
 
       return Ok((res, headers));

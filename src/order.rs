@@ -1,6 +1,6 @@
 use crate::account::Account;
+use crate::error::*;
 use crate::helpers::*;
-use anyhow::Error;
 use openssl::hash::MessageDigest;
 use openssl::pkey::PKey;
 use openssl::pkey::Private;
@@ -58,7 +58,7 @@ pub struct Order {
   pub not_after: Option<String>,
 
   /// The error that occurred while processing the order, if any.
-  pub error: Option<AcmeError>,
+  pub error: Option<ServerError>,
 
   #[serde(rename = "authorizations")]
   /// For pending orders, the authorizations that the client needs to
@@ -130,15 +130,17 @@ impl OrderBuilder {
     let res: Result<Order, Error> = res.into();
     let mut order = res?;
 
-    let order_url = headers
-      .get(reqwest::header::LOCATION)
-      .ok_or_else(|| {
-        anyhow::anyhow!(
-          "mandatory location header in newOrder response not present"
-        )
-      })?
-      .to_str()?
-      .to_string();
+    let order_url = map_transport_err(
+      headers
+        .get(reqwest::header::LOCATION)
+        .ok_or_else(|| {
+          transport_err(
+            "mandatory location header in newOrder response not present",
+          )
+        })?
+        .to_str(),
+    )?
+    .to_string();
     Span::current().record("order_url", &field::display(&order_url));
 
     order.account = Some(self.account.clone());
@@ -164,8 +166,8 @@ fn gen_csr(
   domains: Vec<String>,
 ) -> Result<X509Req, Error> {
   if domains.is_empty() {
-    return Err(anyhow::anyhow!(
-      "You need to supply at least one domain name"
+    return Err(Error::Validation(
+      "at least one domain name needs to be supplied",
     ));
   }
 

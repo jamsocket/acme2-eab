@@ -10,7 +10,6 @@ repository = "https://github.com/lucacasonato/acme2"
 edition = "2018"
 
 [dependencies]
-anyhow = "1.0"
 serde = {version = "1.0", features=["derive"]}
 serde_json = "1.0"
 base64 = "0.13"
@@ -20,6 +19,7 @@ openssl = "0.10"
 tokio = { version = "1.0", features = [ "time", "fs" ] }
 tracing = "0.1"
 tracing-futures = "0.2"
+thiserror = "1.0.24"
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }

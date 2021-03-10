@@ -1,3 +1,4 @@
+use crate::error::*;
 use crate::helpers::*;
 use openssl::hash::MessageDigest;
 use openssl::pkey::PKey;
@@ -41,7 +42,7 @@ pub(crate) fn jws(
   payload: &str,
   pkey: &PKey<Private>,
   pkey_id: Option<String>,
-) -> Result<String, anyhow::Error> {
+) -> Result<String, Error> {
   let payload_b64 = b64(&payload.as_bytes());
 
   let mut header = JwsHeader {
