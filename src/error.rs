@@ -12,10 +12,10 @@ pub enum Error {
   Server(#[from] ServerError),
 
   #[error(transparent)]
-  Transport(Box<dyn std::error::Error>),
+  Transport(Box<dyn std::error::Error + Send + Sync>),
 
   #[error(transparent)]
-  Other(Box<dyn std::error::Error>),
+  Other(Box<dyn std::error::Error + Send + Sync>),
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -26,7 +26,7 @@ pub fn transport_err(msg: &'static str) -> Error {
   Error::Transport(Box::new(TransportError(msg)))
 }
 
-pub fn map_transport_err<T, E: std::error::Error + 'static>(
+pub fn map_transport_err<T, E: std::error::Error + Send + Sync + 'static>(
   res: Result<T, E>,
 ) -> Result<T, Error> {
   res.map_err(|err| Error::Transport(Box::new(err)))
