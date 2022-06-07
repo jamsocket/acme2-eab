@@ -76,6 +76,7 @@ impl DirectoryBuilder {
 /// Must be created through a [`DirectoryBuilder`].
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+#[allow(unused)]
 pub struct Directory {
   #[serde(skip)]
   pub(crate) http_client: reqwest::Client,
@@ -90,7 +91,7 @@ pub struct Directory {
   #[serde(rename = "revokeCert")]
   pub(crate) revoke_cert_url: String,
   #[serde(rename = "keyChange")]
-  pub(crate) key_change_url: String,
+  pub(crate) key_change_url: Option<String>,
   #[serde(rename = "newAuthz")]
   pub(crate) new_authz_url: Option<String>,
   /// Optional metadata describing a directory.
