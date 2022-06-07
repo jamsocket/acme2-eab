@@ -10,6 +10,7 @@ use serde::Serialize;
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 struct JwsHeader {
+  #[serde(skip_serializing_if = "Option::is_none")]
   nonce: Option<String>,
   alg: String,
   url: String,
