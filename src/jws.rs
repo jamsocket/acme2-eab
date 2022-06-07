@@ -7,7 +7,6 @@ use openssl::pkey::Private;
 use openssl::sign::Signer;
 use serde::Deserialize;
 use serde::Serialize;
-use serde_json::json;
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 struct JwsHeader {
@@ -37,18 +36,25 @@ impl Jwk {
   }
 }
 
+#[derive(Serialize, Debug, Clone)]
+pub struct JwsResult {
+  protected: String,
+  payload: String,
+  signature: String,
+}
+
 pub(crate) fn jws(
   url: &str,
   nonce: Option<String>,
   payload: &str,
   pkey: &PKey<Private>,
   account_id: Option<String>,
-) -> Result<String, Error> {
+) -> Result<JwsResult, Error> {
   let payload_b64 = b64(&payload.as_bytes());
 
   let alg: String = match pkey.id() {
     Id::RSA => "RS256".into(),
-    Id::HMAC => "HC256".into(),
+    Id::HMAC => "HS256".into(),
     _ => todo!(),
   };
 
@@ -74,9 +80,9 @@ pub(crate) fn jws(
     b64(&signer.sign_to_vec()?)
   };
 
-  Ok(serde_json::to_string(&json!({
-    "protected": protected_b64,
-    "payload": payload_b64,
-    "signature": signature_b64
-  }))?)
+  Ok(JwsResult {
+    protected: protected_b64,
+    payload: payload_b64,
+    signature: signature_b64,
+  })
 }

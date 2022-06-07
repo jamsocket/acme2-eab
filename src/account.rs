@@ -162,8 +162,7 @@ impl AccountBuilder {
     let url = self.directory.new_account_url.clone();
 
     let external_account_binding = if let Some(eab_config) = &self.eab_config {
-      let payload =
-        b64(&serde_json::to_vec(&Jwk::new(&eab_config.private_key)).unwrap());
+      let payload = serde_json::to_string(&Jwk::new(&private_key)).unwrap();
 
       Some(jws(
         &url,

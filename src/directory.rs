@@ -161,6 +161,7 @@ impl Directory {
   ) -> Result<reqwest::Response, Error> {
     let nonce = self.get_nonce().await?;
     let body = jws(url, Some(nonce), &payload, pkey, account_id.clone())?;
+    let body = serde_json::to_vec(&body)?;
     let resp = self
       .http_client
       .post(url)
