@@ -1,6 +1,7 @@
 use crate::error::*;
 use crate::helpers::*;
 use openssl::hash::MessageDigest;
+use openssl::pkey::Id;
 use openssl::pkey::PKey;
 use openssl::pkey::Private;
 use openssl::sign::Signer;
@@ -10,7 +11,7 @@ use serde_json::json;
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 struct JwsHeader {
-  nonce: String,
+  nonce: Option<String>,
   alg: String,
   url: String,
   #[serde(skip_serializing_if = "Option::is_none")]
@@ -38,16 +39,22 @@ impl Jwk {
 
 pub(crate) fn jws(
   url: &str,
-  nonce: String,
+  nonce: Option<String>,
   payload: &str,
   pkey: &PKey<Private>,
   account_id: Option<String>,
 ) -> Result<String, Error> {
   let payload_b64 = b64(&payload.as_bytes());
 
+  let alg: String = match pkey.id() {
+    Id::RSA => "RS256".into(),
+    Id::HMAC => "HC256".into(),
+    _ => todo!(),
+  };
+
   let mut header = JwsHeader {
     nonce,
-    alg: "RS256".into(),
+    alg,
     url: url.to_string(),
     ..Default::default()
   };
