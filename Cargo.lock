@@ -3,7 +3,7 @@
 version = 3
 
 [[package]]
-name = "acme2"
+name = "acme2-eab"
 version = "0.5.1"
 dependencies = [
  "base64",

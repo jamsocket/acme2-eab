@@ -1,3 +1,7 @@
+Note: this is a fork of [lucacasonato/acme2](https://github.com/lucacasonato/acme2) that adds [External Account Binding](https://dev.digicert.com/services-api/api-keys/acme-external-account-binding/)
+support, needed for ZeroSSL and Google Certificate Manager support. It is packaged separately so that we can use it from other codebases until [this upstream PR](https://github.com/lucacasonato/acme2/pull/21)
+is merged.
+
 # acme2
 
 A [Tokio](https://crates.io/crates/tokio) and
