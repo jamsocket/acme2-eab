@@ -1,4 +1,7 @@
-//! # acme2
+//! # acme2-eab
+//!
+//! NOTE: this is a fork of [acme2](https://crates.io/crates/acme2) which
+//! adds support for [External Account Binding](https://tools.ietf.org/html/rfc8555#section-7.3.4).
 //!
 //! A [Tokio](https://crates.io/crates/tokio) and
 //! [OpenSSL](https://crates.io/crates/openssl) based
@@ -17,15 +20,15 @@
 //! `example.com` using `http-01` validation.
 //!
 //! ```no_run
-//! use acme2::gen_rsa_private_key;
-//! use acme2::AccountBuilder;
-//! use acme2::AuthorizationStatus;
-//! use acme2::ChallengeStatus;
-//! use acme2::DirectoryBuilder;
-//! use acme2::OrderBuilder;
-//! use acme2::OrderStatus;
-//! use acme2::Csr;
-//! use acme2::Error;
+//! use acme2_eab::gen_rsa_private_key;
+//! use acme2_eab::AccountBuilder;
+//! use acme2_eab::AuthorizationStatus;
+//! use acme2_eab::ChallengeStatus;
+//! use acme2_eab::DirectoryBuilder;
+//! use acme2_eab::OrderBuilder;
+//! use acme2_eab::OrderStatus;
+//! use acme2_eab::Csr;
+//! use acme2_eab::Error;
 //! use std::time::Duration;
 //!
 //! const LETS_ENCRYPT_URL: &'static str =
@@ -131,6 +134,7 @@ pub use order::*;
 #[cfg(test)]
 mod tests {
   use crate::*;
+  use base64::Engine;
   use openssl::pkey::PKey;
   use serde_json::json;
   use std::sync::Arc;
@@ -239,7 +243,9 @@ mod tests {
     let eab_key = {
       let value_b64 =
         "zWNDZM6eQGHWpSRTPal5eIUYFTu7EajVIoguysqZ9wG44nMEtx3MUAsUDkMTQ12W";
-      let value = base64::decode(&value_b64).unwrap();
+      let value = base64::engine::general_purpose::STANDARD
+        .decode(&value_b64)
+        .unwrap();
       PKey::hmac(&value).unwrap()
     };
 

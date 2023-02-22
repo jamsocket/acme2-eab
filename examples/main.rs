@@ -1,12 +1,12 @@
-use acme2::gen_rsa_private_key;
-use acme2::AccountBuilder;
-use acme2::AuthorizationStatus;
-use acme2::ChallengeStatus;
-use acme2::Csr;
-use acme2::DirectoryBuilder;
-use acme2::Error;
-use acme2::OrderBuilder;
-use acme2::OrderStatus;
+use acme2_eab::gen_rsa_private_key;
+use acme2_eab::AccountBuilder;
+use acme2_eab::AuthorizationStatus;
+use acme2_eab::ChallengeStatus;
+use acme2_eab::Csr;
+use acme2_eab::DirectoryBuilder;
+use acme2_eab::Error;
+use acme2_eab::OrderBuilder;
+use acme2_eab::OrderStatus;
 use std::time::Duration;
 
 const LETS_ENCRYPT_URL: &str = "https://acme-v02.api.letsencrypt.org/directory";

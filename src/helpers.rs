@@ -1,4 +1,5 @@
 use crate::error::*;
+use base64::Engine;
 use openssl::ec::EcGroup;
 use openssl::ec::EcKey;
 use openssl::nid::Nid;
@@ -20,7 +21,12 @@ pub struct Identifier {
 }
 
 pub(crate) fn b64(data: &[u8]) -> String {
-  base64::encode_config(data, ::base64::URL_SAFE_NO_PAD)
+  let engine = base64::engine::GeneralPurpose::new(
+    &base64::alphabet::URL_SAFE,
+    base64::engine::general_purpose::NO_PAD,
+  );
+
+  engine.encode(data)
 }
 
 /// Generate a new RSA private key using the specified size,
