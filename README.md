@@ -114,33 +114,10 @@ async fn main() -> Result<(), Error> {
 
 ## Development
 
-To run the tests, you will need to install `pebble` and `pebble-challtestsrv`.
+To run the tests, you will need a running Docker instance. Then, run:
 
-Start these before running the tests with these commands (in seperate shells):
-
-```shell
-pebble -config ./pebble-config.json -strict
 ```
-
-```shell
-pebble-challtestsrv
-```
-
-### Windows
-
-To compile on Windows you will need OpenSSL. Here is an easy way to get it
-installed.
-
-(example in Git Bash)
-
-```bash
-git clone https://github.com/microsoft/vcpkg
-cd vcpkg
-./bootstrap-vcpkg.sh
-./vcpkg.exe install openssl
-./vcpkg.exe install openssl:x64-windows-static
-# Add OPENSSL_DIR=/vcpkg/path/installed/x64-windows-static
-cargo build
+cargo test
 ```
 
 ## Licence

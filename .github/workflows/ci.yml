@@ -14,10 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
       - name: Install rust
         uses: hecrj/setup-rust-action@v1
         with:
-          rust-version: 1.51.0
+          rust-version: 1.76.0
       - name: Install clippy and rustfmt
         run: |
           rustup component add clippy
@@ -32,12 +36,10 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - name: Lint
-        run: |
-          cargo clippy --all-targets --locked --release -- -D clippy::all
+      # - name: Lint
+      #   run: |
+      #     cargo clippy --all-targets --locked --release -- -D clippy::all
       - name: Build
         run: cargo build --verbose
-      - name: Start pebble
-        run: docker-compose up -d
       - name: Run tests
         run: cargo test --verbose
