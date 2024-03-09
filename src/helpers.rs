@@ -1,4 +1,5 @@
 use crate::error::*;
+use data_encoding::BASE64URL_NOPAD;
 use openssl::ec::EcGroup;
 use openssl::ec::EcKey;
 use openssl::nid::Nid;
@@ -7,7 +8,6 @@ use openssl::pkey::Private;
 use openssl::rsa::Rsa;
 use serde::Deserialize;
 use serde::Serialize;
-use data_encoding::BASE64URL_NOPAD;
 
 /// This is a identifier for a resource that the ACME server
 /// can provision certificates for (a domain).
