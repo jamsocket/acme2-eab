@@ -4,7 +4,6 @@ use crate::common::test_env::TestEnv;
 use acme2_eab::*;
 use base64::Engine;
 use common::pebble::Pebble;
-use hyper::StatusCode;
 use openssl::pkey::PKey;
 use serde_json::json;
 use std::sync::Arc;
@@ -315,7 +314,7 @@ async fn test_order_dns01_challenge_pebble() {
       .unwrap();
     println!("{:#?}", challenge.error);
     assert_eq!(challenge.status, ChallengeStatus::Valid);
-    
+
     let authorization =
       auth.wait_done(Duration::from_secs(5), 3).await.unwrap();
     assert_eq!(authorization.status, AuthorizationStatus::Valid)

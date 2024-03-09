@@ -3,7 +3,6 @@ use crate::common::docker::Container;
 use crate::common::wait::wait_for_url;
 use anyhow::Result;
 use bollard::container::Config;
-use reqwest::Client;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -115,7 +114,6 @@ impl PebbleBuilder {
 }
 
 pub struct Pebble {
-  container: Container,
   pub directory_url: Url,
 }
 
@@ -127,16 +125,6 @@ impl Pebble {
     );
 
     Url::parse(&v).unwrap()
-  }
-
-  pub fn client() -> Result<Client> {
-    let raw = std::fs::read("./certs/pebble.minica.pem").unwrap();
-    let cert = reqwest::Certificate::from_pem(&raw).unwrap();
-    Ok(
-      reqwest::Client::builder()
-        .add_root_certificate(cert)
-        .build()?,
-    )
   }
 
   pub async fn new_default(env: &mut TestEnv) -> Result<Pebble> {
@@ -202,10 +190,7 @@ impl Pebble {
 
     wait_for_url(&directory_url, 5).await?;
 
-    let pebble = Pebble {
-      container,
-      directory_url,
-    };
+    let pebble = Pebble { directory_url };
 
     Ok(pebble)
   }

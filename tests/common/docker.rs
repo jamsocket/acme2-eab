@@ -131,18 +131,6 @@ impl Container {
     Ok(stdout_buffer)
   }
 
-  pub async fn check_exit_code(&self) -> Result<()> {
-    let container_info = self
-      .docker
-      .inspect_container(&self.container_id, None)
-      .await?;
-    if container_info.state.as_ref().map(|s| s.exit_code) != Some(Some(0)) {
-      return Err(anyhow::anyhow!("Container exited with non-zero exit code."));
-    };
-
-    Ok(())
-  }
-
   pub async fn stop(&self) -> Result<()> {
     self.docker.stop_container(&self.container_id, None).await?;
 

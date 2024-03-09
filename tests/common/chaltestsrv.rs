@@ -1,4 +1,4 @@
-use super::{docker::Container, test_env::TestEnv, wait::wait_for_url};
+use super::{test_env::TestEnv, wait::wait_for_url};
 use anyhow::Result;
 use bollard::container::Config;
 use reqwest::Url;
@@ -10,7 +10,6 @@ const HTTP_PORT: u16 = 5002;
 const DNS_PORT: u16 = 8053;
 
 pub struct TestServ {
-  container: Container,
   pub management_url: Url,
   pub http_port: u16,
   pub dns_port: u16,
@@ -52,7 +51,7 @@ impl TestServ {
                 host_ip: Some("0.0.0.0".to_string()),
                 host_port: None,
               }]),
-            )
+            ),
           ]
           .into_iter()
           .collect(),
@@ -72,7 +71,6 @@ impl TestServ {
     let dns_port = container.get_udp_port(DNS_PORT).await?;
 
     Ok(Self {
-      container,
       management_url: url,
       http_port,
       dns_port,
