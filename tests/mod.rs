@@ -134,7 +134,11 @@ async fn test_account_creation_pebble_eab() {
 async fn test_order_http01_challenge_pebble_rsa() {
   let mut env = TestEnv::new("test_order_http01_challenge_pebble_rsa");
   let testserv = TestServ::new(&mut env).await.unwrap();
-  let pebble = PebbleBuilder::new().with_http_port(testserv.http_port).build(&mut env).await.unwrap();
+  let pebble = PebbleBuilder::new()
+    .with_http_port(testserv.http_port)
+    .build(&mut env)
+    .await
+    .unwrap();
 
   let account = pebble_account(&pebble).await;
 
@@ -171,14 +175,8 @@ async fn test_order_http01_challenge_pebble_rsa() {
       .await
       .unwrap();
 
+    println!("{:#?}", challenge.error);
     assert_eq!(challenge.status, ChallengeStatus::Valid);
-
-    client
-      .post(format!("{}del-http01", testserv.management_url))
-      .json(&json!({ "token": challenge.token }))
-      .send()
-      .await
-      .unwrap();
 
     let authorization =
       auth.wait_done(Duration::from_secs(5), 3).await.unwrap();
@@ -204,74 +202,75 @@ async fn test_order_http01_challenge_pebble_rsa() {
   env.stop().await;
 }
 
-// // #[tokio::test]
-// // async fn test_order_http01_challenge_pebble_ec() {
-// //   let account = pebble_account().await;
+#[tokio::test]
+async fn test_order_http01_challenge_pebble_ec() {
+  let mut env = TestEnv::new("test_order_http01_challenge_pebble_ec");
+  let testserv = TestServ::new(&mut env).await.unwrap();
+  let pebble = PebbleBuilder::new()
+    .with_http_port(testserv.http_port)
+    .build(&mut env)
+    .await
+    .unwrap();
 
-// //   let mut builder = OrderBuilder::new(account);
-// //   let order = builder
-// //     .add_dns_identifier(
-// //       "test-order-http01-challenge-pebble.lcas.dev".to_string(),
-// //     )
-// //     .build()
-// //     .await
-// //     .unwrap();
+  let account = pebble_account(&pebble).await;
 
-// //   let authorizations = order.authorizations().await.unwrap();
+  let mut builder = OrderBuilder::new(account);
+  let order = builder
+    .add_dns_identifier("host.docker.internal".to_string())
+    .build()
+    .await
+    .unwrap();
 
-// //   let client = pebble_http_client().await;
-// //   for auth in authorizations {
-// //     let challenge = auth.get_challenge("http-01").unwrap();
+  let authorizations = order.authorizations().await.unwrap();
 
-// //     assert_eq!(challenge.status, ChallengeStatus::Pending);
+  let client = pebble_http_client().await;
+  for auth in authorizations {
+    let challenge = auth.get_challenge("http-01").unwrap();
 
-// //     client
-// //       .post("http://localhost:8055/add-http01")
-// //       .json(&json!({
-// //         "token": challenge.token,
-// //         "content": challenge.key_authorization().unwrap().unwrap()
-// //       }))
-// //       .send()
-// //       .await
-// //       .unwrap();
+    assert_eq!(challenge.status, ChallengeStatus::Pending);
 
-// //     let challenge = challenge.validate().await.unwrap();
-// //     let challenge = challenge
-// //       .wait_done(Duration::from_secs(5), 3)
-// //       .await
-// //       .unwrap();
+    client
+      .post(format!("{}add-http01", testserv.management_url))
+      .json(&json!({
+        "token": challenge.token,
+        "content": challenge.key_authorization().unwrap().unwrap()
+      }))
+      .send()
+      .await
+      .unwrap();
 
-// //     println!("{:#?}", challenge.error);
-// //     assert_eq!(challenge.status, ChallengeStatus::Valid);
+    let challenge = challenge.validate().await.unwrap();
+    let challenge = challenge
+      .wait_done(Duration::from_secs(5), 3)
+      .await
+      .unwrap();
 
-// //     client
-// //       .post("http://localhost:8055/del-http01")
-// //       .json(&json!({ "token": challenge.token }))
-// //       .send()
-// //       .await
-// //       .unwrap();
+    println!("{:#?}", challenge.error);
+    assert_eq!(challenge.status, ChallengeStatus::Valid);
 
-// //     let authorization =
-// //       auth.wait_done(Duration::from_secs(5), 3).await.unwrap();
-// //     assert_eq!(authorization.status, AuthorizationStatus::Valid)
-// //   }
+    let authorization =
+      auth.wait_done(Duration::from_secs(5), 3).await.unwrap();
+    assert_eq!(authorization.status, AuthorizationStatus::Valid)
+  }
 
-// //   assert_eq!(order.status, OrderStatus::Pending);
+  assert_eq!(order.status, OrderStatus::Pending);
 
-// //   let order = order.wait_ready(Duration::from_secs(5), 3).await.unwrap();
+  let order = order.wait_ready(Duration::from_secs(5), 3).await.unwrap();
 
-// //   assert_eq!(order.status, OrderStatus::Ready);
+  assert_eq!(order.status, OrderStatus::Ready);
 
-// //   let pkey = gen_ec_p256_private_key().unwrap();
-// //   let order = order.finalize(Csr::Automatic(pkey)).await.unwrap();
+  let pkey = gen_ec_p256_private_key().unwrap();
+  let order = order.finalize(Csr::Automatic(pkey)).await.unwrap();
 
-// //   let order = order.wait_done(Duration::from_secs(5), 3).await.unwrap();
+  let order = order.wait_done(Duration::from_secs(5), 3).await.unwrap();
 
-// //   assert_eq!(order.status, OrderStatus::Valid);
+  assert_eq!(order.status, OrderStatus::Valid);
 
-// //   let cert = order.certificate().await.unwrap().unwrap();
-// //   assert!(cert.len() > 1);
-// // }
+  let cert = order.certificate().await.unwrap().unwrap();
+  assert!(cert.len() > 1);
+
+  env.stop().await;
+}
 
 // // #[tokio::test]
 // // async fn test_order_dns01_challenge_pebble() {

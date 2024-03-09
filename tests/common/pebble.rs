@@ -95,7 +95,8 @@ impl PebbleBuilder {
   }
 
   pub fn with_eab_keypair(&mut self, key_id: &str, key: &str) -> &mut Self {
-    self.config
+    self
+      .config
       .external_account_mac_keys
       .insert(key_id.to_string(), key.to_string());
     self
@@ -107,7 +108,8 @@ impl PebbleBuilder {
   }
 
   pub async fn build(&mut self, env: &mut TestEnv) -> Result<Pebble> {
-    let pebble = Pebble::new_from_config(env, self.dns_port, &self.config).await?;
+    let pebble =
+      Pebble::new_from_config(env, self.dns_port, &self.config).await?;
     Ok(pebble)
   }
 }

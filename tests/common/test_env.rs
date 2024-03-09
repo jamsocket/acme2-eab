@@ -38,7 +38,7 @@ impl TestEnv {
     std::fs::create_dir_all(&log_dir).unwrap();
 
     let container = Container::create(
-        name.to_string(),
+      name.to_string(),
       self.docker.clone(),
       config.clone(),
       Some(log_dir),
