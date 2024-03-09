@@ -2,12 +2,12 @@ use crate::common::chaltestsrv::TestServ;
 use crate::common::pebble::PebbleBuilder;
 use crate::common::test_env::TestEnv;
 use acme2_eab::*;
-use base64::Engine;
 use common::pebble::Pebble;
 use openssl::pkey::PKey;
 use serde_json::json;
 use std::sync::Arc;
 use std::time::Duration;
+use data_encoding::BASE64URL_NOPAD;
 
 mod common;
 
@@ -107,8 +107,8 @@ async fn test_account_creation_pebble_eab() {
 
     let eab_key = {
         let value_b64 = private_key;
-        let value = base64::engine::general_purpose::STANDARD
-            .decode(value_b64)
+        let value = BASE64URL_NOPAD
+            .decode(value_b64.as_bytes())
             .unwrap();
         PKey::hmac(&value).unwrap()
     };

@@ -1,5 +1,4 @@
 use crate::error::*;
-use base64::Engine;
 use openssl::ec::EcGroup;
 use openssl::ec::EcKey;
 use openssl::nid::Nid;
@@ -8,6 +7,7 @@ use openssl::pkey::Private;
 use openssl::rsa::Rsa;
 use serde::Deserialize;
 use serde::Serialize;
+use data_encoding::BASE64URL_NOPAD;
 
 /// This is a identifier for a resource that the ACME server
 /// can provision certificates for (a domain).
@@ -21,12 +21,7 @@ pub struct Identifier {
 }
 
 pub(crate) fn b64(data: &[u8]) -> String {
-    let engine = base64::engine::GeneralPurpose::new(
-        &base64::alphabet::URL_SAFE,
-        base64::engine::general_purpose::NO_PAD,
-    );
-
-    engine.encode(data)
+    BASE64URL_NOPAD.encode(data)
 }
 
 /// Generate a new RSA private key using the specified size,
