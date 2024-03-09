@@ -51,7 +51,7 @@ pub(crate) fn jws(
     pkey: &PKey<Private>,
     account_id: Option<String>,
 ) -> Result<JwsResult, Error> {
-    let payload_b64 = b64(&payload.as_bytes());
+    let payload_b64 = b64(payload.as_bytes());
 
     let alg: String = match pkey.id() {
         Id::RSA => "RS256".into(),
@@ -69,7 +69,7 @@ pub(crate) fn jws(
     if let Some(kid) = account_id {
         header.kid = kid.into();
     } else {
-        header.jwk = Some(Jwk::new(&pkey));
+        header.jwk = Some(Jwk::new(pkey));
     }
 
     let protected_b64 = b64(&serde_json::to_string(&header)?.into_bytes());
