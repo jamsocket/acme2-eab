@@ -7,11 +7,13 @@ use std::collections::HashMap;
 const TESTSERV_IMAGE: &str = "letsencrypt/pebble-challtestsrv:v2.3.1";
 const TESTSERV_PORT: u16 = 8055;
 const HTTP_PORT: u16 = 5002;
+const DNS_PORT: u16 = 8053;
 
 pub struct TestServ {
   container: Container,
   pub management_url: Url,
   pub http_port: u16,
+  pub dns_port: u16,
 }
 
 impl TestServ {
@@ -22,6 +24,7 @@ impl TestServ {
         vec![
           (format!("{}/tcp", TESTSERV_PORT), HashMap::new()),
           (format!("{}/tcp", HTTP_PORT), HashMap::new()),
+          (format!("{}/udp", DNS_PORT), HashMap::new()),
         ]
         .into_iter()
         .collect(),
@@ -43,6 +46,13 @@ impl TestServ {
                 host_port: None,
               }]),
             ),
+            (
+              format!("{}/udp", DNS_PORT),
+              Some(vec![bollard::service::PortBinding {
+                host_ip: Some("0.0.0.0".to_string()),
+                host_port: None,
+              }]),
+            )
           ]
           .into_iter()
           .collect(),
@@ -53,17 +63,19 @@ impl TestServ {
     };
 
     let container = env.start_container("testserv", &config).await?;
-    let port = container.get_port(TESTSERV_PORT).await?;
+    let port = container.get_tcp_port(TESTSERV_PORT).await?;
 
     let url = Url::parse(&format!("http://localhost:{}", port)).unwrap();
     wait_for_url(&url, 5).await?;
 
-    let http_port = container.get_port(HTTP_PORT).await?;
+    let http_port = container.get_tcp_port(HTTP_PORT).await?;
+    let dns_port = container.get_udp_port(DNS_PORT).await?;
 
     Ok(Self {
       container,
       management_url: url,
       http_port,
+      dns_port,
     })
   }
 }

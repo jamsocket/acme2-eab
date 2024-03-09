@@ -272,60 +272,64 @@ async fn test_order_http01_challenge_pebble_ec() {
   env.stop().await;
 }
 
-// // #[tokio::test]
-// // async fn test_order_dns01_challenge_pebble() {
-// //   let account = pebble_account().await;
-// //   let mut builder = OrderBuilder::new(account);
-// //   let order = builder
-// //     .add_dns_identifier(
-// //       "test-order-dns01-challenge-pebble.lcas.dev".to_string(),
-// //     )
-// //     .build()
-// //     .await
-// //     .unwrap();
-// //   let authorizations = order.authorizations().await.unwrap();
-// //   let client = pebble_http_client().await;
+#[tokio::test]
+async fn test_order_dns01_challenge_pebble() {
+  let mut env = TestEnv::new("test_order_dns01_challenge_pebble");
+  let testserv = TestServ::new(&mut env).await.unwrap();
+  let pebble = PebbleBuilder::new()
+    .with_dns_port(testserv.dns_port)
+    .build(&mut env)
+    .await
+    .unwrap();
 
-// //   for auth in authorizations {
-// //     let challenge = auth.get_challenge("dns-01").unwrap();
+  let account = pebble_account(&pebble).await;
 
-// //     assert_eq!(challenge.status, ChallengeStatus::Pending);
-// //     client
-// //       .post("http://localhost:8055/set-txt")
-// //       .json(&json!({
-// //         "host": "_acme-challenge.test-order-dns01-challenge-pebble.lcas.dev.",
-// //         "value": challenge.key_authorization_encoded().unwrap().unwrap(),
-// //       }))
-// //       .send()
-// //       .await
-// //       .unwrap();
-// //     let challenge = challenge.validate().await.unwrap();
-// //     let challenge = challenge
-// //       .wait_done(Duration::from_secs(5), 3)
-// //       .await
-// //       .unwrap();
-// //     println!("{:#?}", challenge.error);
-// //     assert_eq!(challenge.status, ChallengeStatus::Valid);
-// //     client
-// //       .post("http://localhost:8055/clear-txt")
-// //       .json(&json!({
-// //         "host": "_acme-challenge.test-order-dns01-challenge-pebble.lcas.dev."
-// //       }))
-// //       .send()
-// //       .await
-// //       .unwrap();
-// //     let authorization =
-// //       auth.wait_done(Duration::from_secs(5), 3).await.unwrap();
-// //     assert_eq!(authorization.status, AuthorizationStatus::Valid)
-// //   }
+  let mut builder = OrderBuilder::new(account);
+  let order = builder
+    .add_dns_identifier(
+      "test-order-dns01-challenge-pebble.lcas.dev".to_string(),
+    )
+    .build()
+    .await
+    .unwrap();
+  let authorizations = order.authorizations().await.unwrap();
+  let client = pebble_http_client().await;
 
-// //   assert_eq!(order.status, OrderStatus::Pending);
-// //   let order = order.wait_ready(Duration::from_secs(5), 3).await.unwrap();
-// //   assert_eq!(order.status, OrderStatus::Ready);
-// //   let pkey = gen_rsa_private_key(4096).unwrap();
-// //   let order = order.finalize(Csr::Automatic(pkey)).await.unwrap();
-// //   let order = order.wait_done(Duration::from_secs(5), 3).await.unwrap();
-// //   assert_eq!(order.status, OrderStatus::Valid);
-// //   let cert = order.certificate().await.unwrap().unwrap();
-// //   assert!(cert.len() > 1);
-// // }
+  for auth in authorizations {
+    let challenge = auth.get_challenge("dns-01").unwrap();
+
+    assert_eq!(challenge.status, ChallengeStatus::Pending);
+    client
+      .post(format!("{}set-txt", testserv.management_url))
+      .json(&json!({
+        "host": "_acme-challenge.test-order-dns01-challenge-pebble.lcas.dev.",
+        "value": challenge.key_authorization_encoded().unwrap().unwrap(),
+      }))
+      .send()
+      .await
+      .unwrap();
+    let challenge = challenge.validate().await.unwrap();
+    let challenge = challenge
+      .wait_done(Duration::from_secs(5), 3)
+      .await
+      .unwrap();
+    println!("{:#?}", challenge.error);
+    assert_eq!(challenge.status, ChallengeStatus::Valid);
+    
+    let authorization =
+      auth.wait_done(Duration::from_secs(5), 3).await.unwrap();
+    assert_eq!(authorization.status, AuthorizationStatus::Valid)
+  }
+
+  assert_eq!(order.status, OrderStatus::Pending);
+  let order = order.wait_ready(Duration::from_secs(5), 3).await.unwrap();
+  assert_eq!(order.status, OrderStatus::Ready);
+  let pkey = gen_rsa_private_key(4096).unwrap();
+  let order = order.finalize(Csr::Automatic(pkey)).await.unwrap();
+  let order = order.wait_done(Duration::from_secs(5), 3).await.unwrap();
+  assert_eq!(order.status, OrderStatus::Valid);
+  let cert = order.certificate().await.unwrap().unwrap();
+  assert!(cert.len() > 1);
+
+  env.stop().await;
+}

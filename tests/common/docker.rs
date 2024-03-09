@@ -46,7 +46,7 @@ impl Container {
     })
   }
 
-  async fn try_get_port(&self, container_port: u16) -> Result<u16> {
+  async fn try_get_port(&self, container_port: &str) -> Result<u16> {
     let container_info = self
       .docker
       .inspect_container(&self.container_id, None)
@@ -61,7 +61,7 @@ impl Container {
       .ok_or_else(|| anyhow::anyhow!("Container had no ports."))?;
 
     let port = port
-      .get(&format!("{}/tcp", container_port))
+      .get(container_port)
       .ok_or_else(|| {
         anyhow::anyhow!("Container had no port {}/tcp.", container_port)
       })?
@@ -81,7 +81,7 @@ impl Container {
     Ok(port.parse()?)
   }
 
-  pub async fn get_port(&self, container_port: u16) -> Result<u16> {
+  async fn get_port(&self, container_port: &str) -> Result<u16> {
     // There can be a race condition where the container is ready but has
     // not yet received a port assignment, so we retry a few times.
     for _ in 0..3 {
@@ -95,6 +95,14 @@ impl Container {
     }
 
     Err(anyhow::anyhow!("Failed to get port after retries."))
+  }
+
+  pub async fn get_udp_port(&self, container_port: u16) -> Result<u16> {
+    self.get_port(&format!("{}/udp", container_port)).await
+  }
+
+  pub async fn get_tcp_port(&self, container_port: u16) -> Result<u16> {
+    self.get_port(&format!("{}/tcp", container_port)).await
   }
 
   pub async fn collect_stdout(&self) -> Result<Vec<u8>> {

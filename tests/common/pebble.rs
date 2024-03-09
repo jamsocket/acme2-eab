@@ -123,7 +123,7 @@ impl Pebble {
   async fn directory_url(container: &Container) -> Url {
     let v = format!(
       "https://127.0.0.1:{}/dir",
-      container.get_port(14000).await.unwrap()
+      container.get_tcp_port(14000).await.unwrap()
     );
 
     Url::parse(&v).unwrap()
