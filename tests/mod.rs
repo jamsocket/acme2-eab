@@ -108,7 +108,7 @@ async fn test_account_creation_pebble_eab() {
     let eab_key = {
         let value_b64 = private_key;
         let value = base64::engine::general_purpose::STANDARD
-            .decode(&value_b64)
+            .decode(value_b64)
             .unwrap();
         PKey::hmac(&value).unwrap()
     };

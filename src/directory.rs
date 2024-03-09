@@ -52,10 +52,7 @@ impl DirectoryBuilder {
     fields(url = %self.url, custom_http_client = self.http_client.is_some(), dir = field::Empty)
   )]
     pub async fn build(&mut self) -> Result<Arc<Directory>, Error> {
-        let http_client = self
-            .http_client
-            .clone()
-            .unwrap_or_else(reqwest::Client::new);
+        let http_client = self.http_client.clone().unwrap_or_default();
 
         let resp = http_client.get(&self.url).send().await?;
 
@@ -132,10 +129,10 @@ impl Directory {
     pub(crate) async fn get_nonce(&self) -> Result<String, Error> {
         let maybe_nonce = {
             let mut guard = self.nonce.lock().unwrap();
-            std::mem::replace(&mut *guard, None)
+            (*guard).take()
         };
         let span = Span::current();
-        span.record("cached", &maybe_nonce.is_some());
+        span.record("cached", maybe_nonce.is_some());
         if let Some(nonce) = maybe_nonce {
             return Ok(nonce);
         }
@@ -156,7 +153,7 @@ impl Directory {
         account_id: &Option<String>,
     ) -> Result<reqwest::Response, Error> {
         let nonce = self.get_nonce().await?;
-        let body = jws(url, Some(nonce), &payload, pkey, account_id.clone())?;
+        let body = jws(url, Some(nonce), payload, pkey, account_id.clone())?;
         let body = serde_json::to_vec(&body)?;
         let resp = self
             .http_client
@@ -194,7 +191,7 @@ impl Directory {
             attempt += 1;
 
             let resp = self
-                .authenticated_request_raw(url, &payload, &pkey, &account_id)
+                .authenticated_request_raw(url, payload, pkey, account_id)
                 .await?;
 
             let headers = resp.headers().clone();

@@ -186,7 +186,7 @@ fn gen_csr(pkey: &PKey<openssl::pkey::Private>, domains: Vec<String>) -> Result<
     stack.push(san_extension)?;
     builder.add_extensions(&stack)?;
 
-    builder.set_pubkey(&pkey)?;
+    builder.set_pubkey(pkey)?;
     builder.sign(pkey, MessageDigest::sha256())?;
 
     Ok(builder.build())
@@ -241,7 +241,7 @@ impl Order {
     /// state for this to complete.
     #[instrument(level = Level::INFO, name = "acme2::Order::certificate", err, skip(self), fields(order_url = %self.url, has_certificate = field::Empty))]
     pub async fn certificate(&self) -> Result<Option<Vec<X509>>, Error> {
-        Span::current().record("has_certificate", &self.certificate_url.is_some());
+        Span::current().record("has_certificate", self.certificate_url.is_some());
         let certificate_url = match self.certificate_url.clone() {
             Some(certificate_url) => certificate_url,
             None => return Ok(None),
