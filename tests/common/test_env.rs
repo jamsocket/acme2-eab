@@ -7,6 +7,7 @@ pub struct TestEnv {
     docker: Docker,
     containers: Vec<Container>,
     pub scratch_dir: PathBuf,
+    #[allow(unused)]
     pub name: String,
 }
 
