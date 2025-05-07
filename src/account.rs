@@ -5,8 +5,9 @@ use crate::jws::jws;
 use crate::jws::Jwk;
 use openssl::pkey::PKey;
 use openssl::pkey::Private;
-use serde::Deserialize;
-use serde_json::json;
+use serde::ser::{self, SerializeMap};
+use serde::{Deserialize, Serialize};
+use serde_json::to_value;
 use std::sync::Arc;
 use tracing::field;
 use tracing::instrument;
@@ -84,6 +85,46 @@ pub struct AccountBuilder {
     only_return_existing: Option<bool>,
 }
 
+impl Serialize for AccountBuilder {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut obj = serializer.serialize_map(None)?;
+        if self.contact.is_some() {
+            obj.serialize_entry("contact", &self.contact.clone())?
+        }
+        if self.terms_of_service_agreed.is_some() {
+            obj.serialize_entry(
+                "termsOfServiceAgreed",
+                &self.terms_of_service_agreed.clone(),
+            )?
+        }
+        if self.only_return_existing.is_some() {
+            obj.serialize_entry("onlyReturnExisting", &self.only_return_existing.clone())?
+        }
+        if let Some(eab) = self.eab_config.clone() {
+            if self.private_key.is_none() {
+                return Err(ser::Error::custom("private key was not set or generated."));
+            }
+            let payload =
+                serde_json::to_string(&Jwk::new(&self.private_key.clone().unwrap())).unwrap();
+            let binding = match jws(
+                &self.directory.new_account_url.clone(),
+                None,
+                &payload,
+                &eab.private_key,
+                Some(eab.key_id.clone()),
+            ) {
+                Ok(b) => b,
+                Err(error) => return Err(ser::Error::custom(error.to_string())),
+            };
+            obj.serialize_entry("externalAccountBinding", &binding)?
+        }
+        obj.end()
+    }
+}
+
 impl AccountBuilder {
     /// This creates a new [`AccountBuilder`]. This can be used to create a new
     /// account (if the server has not seen the private key before), or to retrieve
@@ -147,39 +188,18 @@ impl AccountBuilder {
     /// through the [`Account::private_key`] method.
     #[instrument(level = Level::INFO, name = "acme2::AccountBuilder::build", err, skip(self), fields(contact = ?self.contact, terms_of_service_agreed = ?self.terms_of_service_agreed, only_return_existing = ?self.only_return_existing, private_key_id = field::Empty))]
     pub async fn build(&mut self) -> Result<Arc<Account>, Error> {
-        let private_key = if let Some(private_key) = self.private_key.clone() {
-            private_key
-        } else {
-            gen_rsa_private_key(4096)?
-        };
+        if self.private_key.is_none() {
+            self.private_key = Some(gen_rsa_private_key(4096)?);
+        }
+        let private_key = self.private_key.clone().unwrap();
 
         let url = self.directory.new_account_url.clone();
-
-        let external_account_binding = if let Some(eab_config) = &self.eab_config {
-            let payload = serde_json::to_string(&Jwk::new(&private_key)).unwrap();
-
-            Some(jws(
-                &url,
-                None,
-                &payload,
-                &eab_config.private_key,
-                Some(eab_config.key_id.clone()),
-            )?)
-        } else {
-            None
-        };
 
         let (res, headers) = self
             .directory
             .authenticated_request::<_, Account>(
                 &url,
-                json!({
-                  "contact": self.contact,
-                  "termsOfServiceAgreed": self.terms_of_service_agreed,
-                  "onlyReturnExisting": self.only_return_existing,
-                  // TODO: omit if None?
-                  "externalAccountBinding": external_account_binding,
-                }),
+                to_value(&self).expect("Error Serializing the request"),
                 private_key.clone(),
                 None,
             )
